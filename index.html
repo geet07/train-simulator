@@ -1,0 +1,62 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Train Simulator</title><style>*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#0c1728;color:white;font-family:Arial,sans-serif}canvas{display:block}#hud{position:fixed;top:12px;left:12px;background:#071628d9;padding:14px 18px;border:1px solid #7fb5d055;border-radius:14px;line-height:1.65;font-size:14px;min-width:225px;pointer-events:none}#hud b{color:#a8e8ff}#tip{position:fixed;top:12px;right:12px;max-width:310px;background:#071628d9;padding:12px;border-radius:12px;font-size:13px;line-height:1.5}#controls{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:9px;flex-wrap:wrap;justify-content:center;width:95%}button{background:#164d73;color:#fff;border:1px solid #80d2ff;padding:12px 16px;border-radius:11px;font-size:15px;font-weight:700;cursor:pointer;touch-action:none}button:active{background:#2a9dca}#overlay{position:fixed;inset:0;background:#061326e8;display:flex;align-items:center;justify-content:center;z-index:5}#panel{background:#102842;padding:30px;max-width:480px;text-align:center;border-radius:22px;border:1px solid #72c8ec}#panel h1{font-size:32px;margin:0 0 10px}#panel p{line-height:1.6}#message{position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);font-size:26px;font-weight:900;color:#fff;text-shadow:0 2px 12px #000;pointer-events:none;text-align:center} @media(max-width:620px){#tip{top:auto;bottom:96px;right:8px;font-size:11px;max-width:190px}#hud{font-size:12px;padding:9px;min-width:160px}button{padding:12px 10px;font-size:12px}}</style></head><body><div id="hud">🚆 <b>TRAIN SIMULATOR</b><div id="stats"></div></div><div id="tip">W / ↑ Accelerate · S / ↓ Brake · Space Emergency brake<br>C Change camera · H Horn · P Pause · R Restart<br>Stop at all <b>10 stations</b> below <b>5 km/h</b>. Drive through 3 underground tunnels!</div><div id="message"></div><div id="controls"><button data-hold="w">▲ POWER</button><button data-hold="s">▼ BRAKE</button><button data-act="emergency">⛔ STOP</button><button data-act="camera">📷 CAMERA</button><button data-act="horn">📣 HORN</button><button data-act="pause">⏸ PAUSE</button></div><div id="overlay"><div id="panel"><h1>🚆 TRAIN SIMULATOR</h1><p>Drive a passenger train through mountains, forests, villages and 3 underground tunnels. Stop at <b>10 stations</b> to collect passengers. Watch your speed and don't overshoot the platforms!</p><p><b>W</b> accelerate · <b>S</b> brake · <b>C</b> camera · <b>H</b> horn</p><button id="start">🚦 START JOURNEY</button></div></div><script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bd6f7);scene.fog=new THREE.Fog(0x9bd6f7,180,1100);
+const camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.1,2500);const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xe5f5ff,0x526a3d,2));const sun=new THREE.DirectionalLight(0xfff4d5,2.2);sun.position.set(-110,160,90);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-220;sun.shadow.camera.right=220;sun.shadow.camera.top=220;sun.shadow.camera.bottom=-220;scene.add(sun);
+const mat=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:.8});const green=mat(0x4f9652),dark=mat(0x25313b),metal=mat(0x8c9aa5),wood=mat(0x745239),white=mat(0xf3f3e5),blue=mat(0x1476b8),glass=new THREE.MeshStandardMaterial({color:0x92dafa,metalness:.35,roughness:.16,transparent:true,opacity:.76});
+function box(w,h,d,m,parent,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
+function cyl(rt,rb,h,m,parent,x,y,z,rot=0){const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,12),m);o.position.set(x,y,z);o.rotation.z=rot;o.castShadow=true;parent.add(o);return o}
+const terrain=box(1300,1,13300,green,scene,0,-.9,-6000);const rail=mat(0x666b71);for(const x of [-1.35,1.35])box(.2,.22,12800,rail,scene,x,.23,-6150);
+for(let z=160;z>-12500;z-=4.5)box(4.4,.2,.52,wood,scene,0,.1,z);
+const rng=(n)=>{const v=Math.sin(n*127.1+78.23)*43758.5453;return v-Math.floor(v)};
+for(let i=0;i<1260;i++){const z=120-i*9.7,x=(i%2?1:-1)*(11+rng(i+4)*135);if(i%8===0){const hill=new THREE.Mesh(new THREE.ConeGeometry(25+rng(i)*40,45+rng(i+1)*65,7),mat(0x648d7b));hill.position.set(x*2,17,z);scene.add(hill)}else{cyl(.25,.36,3,wood,scene,x,1.2,z);const leaves=new THREE.Mesh(new THREE.ConeGeometry(2.2+rng(i)*1.5,7,7),mat(i%3?0x246a38:0x347a42));leaves.position.set(x,5,z);scene.add(leaves)}}
+const stations=[
+{name:'Pine Valley',z:-850},
+{name:'Lake Junction',z:-1900},
+{name:'Grand Central',z:-3100},
+{name:'Cedar Grove',z:-4200},
+{name:'Mountain Pass',z:-5400},
+{name:'River Bend',z:-6600},
+{name:'Stonebridge',z:-7800},
+{name:'Evergreen',z:-9000},
+{name:'Silver Hills',z:-10200},
+{name:'Sunset Terminal',z:-11500}
+];
+// Three fully enclosed railway tunnels with visible entrances and exits.
+// Each tunnel has solid side walls, a ceiling, stone portals and interior lights.
+const tunnelStone=mat(0x646c76),tunnelDark=mat(0x30343e),tunnelLight=new THREE.MeshBasicMaterial({color:0xffe8a1});
+for(const [center,length] of [[-1450,350],[-4800,480],[-8350,600]]){
+ const start=center+length/2,end=center-length/2;
+ box(2.6,9,length,tunnelStone,scene,-6.3,4.6,center);
+ box(2.6,9,length,tunnelStone,scene,6.3,4.6,center);
+ box(15.2,2,length,tunnelStone,scene,0,9.5,center);
+ // Rock covering the tunnel, leaving the train passage clear.
+ for(const x of [-15,15])box(16,11,length+18,mat(0x52775b),scene,x,5.1,center);
+ for(const z of [start,end]){
+   box(3,11,3,tunnelStone,scene,-6.3,5.2,z);
+   box(3,11,3,tunnelStone,scene,6.3,5.2,z);
+   box(15,2.3,3,tunnelStone,scene,0,10,z);
+   box(2,.8,.4,mat(0xe0bb60),scene,0,10.3,z+(z===start?2:-2));
+ }
+ for(let z=start-25;z>end+20;z-=38){
+   const lamp=box(2,.18,1,tunnelLight,scene,0,8.3,z);
+   const glow=new THREE.PointLight(0xffe6a0,.9,22);glow.position.set(0,7.7,z);scene.add(glow);
+ }
+}const people=[];
+for(let si=0;si<stations.length;si++){const st=stations[si];box(9,.55,125,mat(0xb8b5a8),scene,8,.45,st.z);box(9,7,35,mat(0xd3bb9d),scene,17,3.8,st.z-28);box(11,.7,40,mat(0x5c6c82),scene,17,7.7,st.z-28);box(5,3,.2,blue,scene,8,3.6,st.z+29);for(let j=0;j<7;j++){const z=st.z-43+j*14;const body=box(.75,1.45,.5,mat([0xe35b52,0x3d70b5,0xf0b94d][j%3]),scene,8,.95,z);const head=new THREE.Mesh(new THREE.SphereGeometry(.32,10,8),mat(0xd9a57e));head.position.set(8,1.95,z);scene.add(head);people.push({body,head,station:si})}for(let j=0;j<5;j++)box(.28,4,.28,metal,scene,3.5,2,st.z-55+j*25)}
+const train=new THREE.Group();scene.add(train);const locomotive=new THREE.Group();train.add(locomotive);box(3.3,3.1,10,blue,locomotive,0,2.35,0);box(3.45,.45,10.4,dark,locomotive,0,4.05,0);box(3.1,1.3,2.5,glass,locomotive,0,3.05,-3.2);box(3.2,.8,2,mat(0xe4c34d),locomotive,0,1.55,-5);box(3.2,.4,10,white,locomotive,0,1.45,0);for(let z of [-3.5,3.5])for(let x of [-1.3,1.3])cyl(.75,.75,.35,dark,locomotive,x,.85,z,Math.PI/2);
+const cars=[];for(let i=0;i<3;i++){const car=new THREE.Group();car.position.z=10+i*11.5;train.add(car);cars.push(car);box(3.2,2.95,10,mat(i%2?0xe8e6db:0xe5e5df),car,0,2.35,0);box(3.4,.4,10.2,blue,car,0,4.03,0);box(3.25,.55,10,blue,car,0,1.48,0);for(let j=0;j<5;j++)for(let side of [-1,1])box(.08,1,1.2,glass,car,side*1.63,3,-3.5+j*1.7);for(let z of [-3.5,3.5])for(let x of [-1.3,1.3])cyl(.72,.72,.3,dark,car,x,.85,z,Math.PI/2)}
+const noseLamp=new THREE.PointLight(0xfff7ca,3,65);noseLamp.position.set(0,2.1,-5.3);locomotive.add(noseLamp);
+let speed=0,power=0,travel=0,stationIndex=0,passengers=0,cameraMode=0,running=false,paused=false,won=false,stopTime=0,last=performance.now(),toastUntil=0;const keys={};const stats=document.getElementById('stats'),message=document.getElementById('message');
+function toast(t,d=2.8){message.textContent=t;toastUntil=performance.now()/1000+d}
+function reset(){speed=0;power=0;travel=0;stationIndex=0;passengers=0;cameraMode=0;paused=false;won=false;stopTime=0;train.position.set(0,0,100);people.forEach(p=>{p.body.visible=true;p.head.visible=true});toast('🚦 10-station journey! Three underground railway tunnels ahead!')}
+function start(){document.getElementById('overlay').style.display='none';reset();running=true}
+document.getElementById('start').addEventListener('click',start);
+function act(a){if(a==='camera')cameraMode=(cameraMode+1)%3;if(a==='emergency'){speed=Math.max(0,speed-18);power=0;toast('⛔ EMERGENCY BRAKE',1)}if(a==='horn'){toast('📣 CHOO CHOO!',1.2)}if(a==='pause'){paused=!paused;toast(paused?'⏸ PAUSED':'▶ RESUMED',1.2)}}
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=true;if([' ','arrowup','arrowdown'].includes(k))e.preventDefault();if(e.repeat)return;if(k==='c')act('camera');if(k==='h')act('horn');if(k==='p')act('pause');if(k==='r'){reset();running=true}if(k===' ')act('emergency')});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>Object.keys(keys).forEach(k=>keys[k]=false));
+for(const b of document.querySelectorAll('[data-hold]')){const k=b.dataset.hold;b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true;b.setPointerCapture(e.pointerId)});for(const ev of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,()=>keys[k]=false)}for(const b of document.querySelectorAll('[data-act]'))b.addEventListener('click',()=>act(b.dataset.act));
+function update(dt){if(!running||paused||won)return;const accelerating=keys.w||keys.arrowup,braking=keys.s||keys.arrowdown;if(accelerating)power=Math.min(1,power+dt*.42);else if(braking)power=Math.max(0,power-dt*.95);else power=Math.max(0,power-dt*.08);const target=power*125;speed+=Math.sign(target-speed)*Math.min(Math.abs(target-speed),dt*(braking?55:accelerating?20:9));speed=Math.max(0,speed);const meters=speed/3.6*dt*1.65;travel+=meters;train.position.z=100-travel;const st=stations[stationIndex];if(st){const distance=Math.abs(train.position.z-st.z);if(distance<53&&speed<5){stopTime+=dt;if(stopTime>1.6){passengers+=7;people.filter(p=>p.station===stationIndex).forEach(p=>{p.body.visible=false;p.head.visible=false});toast('🚉 '+st.name+' — 7 passengers boarded!',4);stationIndex++;stopTime=0;if(stationIndex===stations.length){won=true;toast('🏆 ALL 10 STATIONS COMPLETE! '+passengers+' PASSENGERS DELIVERED!',999)}}}else stopTime=0;if(train.position.z<st.z-95){toast('⚠️ Missed '+st.name+'! Press R to retry.',999);running=false}}}
+function render(){const desired=new THREE.Vector3();if(cameraMode===0)desired.set(0,10,27);else if(cameraMode===1)desired.set(0,3,-2.9);else desired.set(18,15,13);desired.add(train.position);camera.position.lerp(desired,.065);const target=new THREE.Vector3(0,cameraMode===1?3:2, cameraMode===1?-90:-14).add(train.position);camera.lookAt(target);renderer.render(scene,camera)}
+function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-last)/1000,.06);last=now;update(dt);const st=stations[stationIndex];const distance=st?Math.round(Math.abs(train.position.z-st.z)):0;stats.innerHTML=`Speed: <b>${Math.round(speed)} km/h</b><br>Throttle: <b>${Math.round(power*100)}%</b><br>Next stop: <b>${st?st.name:'Complete!'}</b><br>Distance: <b>${distance} m</b><br>Stations: <b>${stationIndex} / 10</b><br>Passengers: <b>${passengers}</b><br>Camera: <b>${['Follow','Driver','Side'][cameraMode]}</b>`;if(now/1000>toastUntil)message.textContent='';render()}requestAnimationFrame(frame);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script><div id="credit" style="position:fixed;bottom:0;right:8px;color:#fff8;font-size:10px;pointer-events:none">Created by Garv Khatri</div></body></html>
